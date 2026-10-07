@@ -69,8 +69,8 @@
   }
   .topbar button:hover { background: var(--bg-alt); }
   .layout {
-    display: grid; grid-template-columns: 280px 1fr;
-    max-width: 1300px; margin: 0 auto; gap: 40px;
+    display: grid; grid-template-columns: 300px 1fr;
+    max-width: 1350px; margin: 0 auto; gap: 40px;
     padding: 32px 24px 80px;
   }
   @media (max-width: 950px) { .layout { grid-template-columns: 1fr; } aside { position: static !important; } }
@@ -88,13 +88,15 @@
   }
   .toc a:hover { background: var(--bg-alt); }
   .toc a.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
+  .toc .sub { padding-left: 24px; font-size: .82rem; }
   main { min-width: 0; }
   .hero { padding: 24px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
   .hero h1 { font-size: 2.2rem; margin: 0 0 8px; letter-spacing: -.02em; }
   .hero p { color: var(--muted); margin: 0; font-size: 1.05rem; }
   section { margin-bottom: 56px; scroll-margin-top: 80px; }
   section h2 { font-size: 1.5rem; margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-  section h3 { font-size: 1.1rem; margin: 28px 0 10px; color: var(--accent); }
+  section h3 { font-size: 1.15rem; margin: 32px 0 10px; color: var(--accent); }
+  section h4 { font-size: 1rem; margin: 20px 0 8px; }
   p { margin: 0 0 12px; }
   ol.steps { padding-left: 0; counter-reset: step; list-style: none; }
   ol.steps li {
@@ -118,7 +120,7 @@
     background: var(--code-bg); border: 1px solid var(--border);
     border-radius: 8px; padding: 14px; overflow-x: auto;
     font-family: "SF Mono", Consolas, Menlo, monospace;
-    font-size: .85rem; line-height: 1.5; margin: 12px 0;
+    font-size: .82rem; line-height: 1.5; margin: 12px 0;
   }
   pre code { background: none; border: none; padding: 0; font-size: inherit; }
   .callout {
@@ -146,8 +148,30 @@
   .card-sm p { margin: 0; font-size: .9rem; color: var(--muted); }
   .badge { display: inline-block; background: var(--accent-soft); color: var(--accent); font-size: .75rem; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
   details { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; margin: 12px 0; background: var(--card); }
-  details summary { font-weight: 600; color: var(--accent); }
+  details summary { font-weight: 600; color: var(--accent); cursor: pointer; }
   details[open] summary { margin-bottom: 8px; }
+  .error-box {
+    background: rgba(207, 34, 46, .08);
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-family: "SF Mono", Consolas, Menlo, monospace;
+    font-size: .82rem;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .fix-box {
+    background: rgba(26, 127, 55, .08);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .fix-box strong { color: var(--green); display: block; margin-bottom: 8px; }
+  .problem { border-left: 4px solid var(--red); padding-left: 16px; margin: 32px 0; }
+  .problem h3 { margin-top: 0; color: var(--red); }
   footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 32px 24px; border-top: 1px solid var(--border); }
 </style>
 </head>
@@ -172,13 +196,14 @@
       <li><a href="#navigation">6. Navigation & XREFs</a></li>
       <li><a href="#renommage">7. Renommage & types</a></li>
       <li><a href="#recherche">8. Recherche avancée</a></li>
-      <li><a href="#scripts">9. Scripting (Jython & PyGhidra)</a></li>
+      <li><a href="#scripts">9. Scripting</a></li>
       <li><a href="#debugger">10. Debugger intégré</a></li>
       <li><a href="#headless">11. Mode headless</a></li>
       <li><a href="#versiontracking">12. Version Tracking & BSim</a></li>
       <li><a href="#plugins">13. Extensions & plugins</a></li>
       <li><a href="#patch">14. Patch & export</a></li>
       <li><a href="#no-admin">15. Sans admin / restrictions</a></li>
+      <li><a href="#errors" class="sub">15.1 Erreurs & solutions</a></li>
       <li><a href="#raccourcis">Raccourcis clavier</a></li>
       <li><a href="#bonnes">Bonnes pratiques</a></li>
       <li><a href="#ressources">Ressources</a></li>
@@ -188,7 +213,7 @@
   <main id="content">
     <div class="hero">
       <h1>Guide Ghidra Complet</h1>
-      <p>Maîtriser le reverse engineering avec Ghidra : du premier lancement au scripting avancé, en passant par le debugging, l'automatisation et les environnements restreints.</p>
+      <p>Maîtriser le reverse engineering avec Ghidra : installation, utilisation, debugging, scripting, et solutions aux problèmes rencontrés en environnement restreint.</p>
     </div>
 
     <section id="intro">
@@ -204,19 +229,25 @@
     <section id="install">
       <h2>1. Installation & prérequis</h2>
       <h3>Systèmes supportés</h3>
-      <p>Ghidra fonctionne sur Windows, macOS et Linux. Il nécessite un <strong>JDK 17 ou 21</strong> (Ghidra ne fonctionne pas avec Java 8).</p>
+      <p>Ghidra fonctionne sur Windows, macOS et Linux. Il nécessite un <strong>JDK 17 ou 21</strong> selon la version de Ghidra.</p>
+      <table>
+        <tr><th>Version Ghidra</th><th>Java requis</th><th>Class file version</th></tr>
+        <tr><td>Ghidra 10.x</td><td>Java 11+</td><td>55</td></tr>
+        <tr><td>Ghidra 11.x</td><td>Java 17+</td><td>61</td></tr>
+        <tr><td><strong>Ghidra 12.x</strong></td><td><strong>Java 21+</strong></td><td><strong>65</strong></td></tr>
+      </table>
+      <div class="callout warn">
+        <strong>⚠️ Important</strong>
+        Java est <strong>rétrocompatible</strong> : Java 25 peut exécuter du bytecode compilé pour Java 21. Tu peux donc utiliser un JDK 25 pour Ghidra 12.x sans problème. C'est l'inverse qui ne fonctionne pas (Java 8 ne peut pas exécuter du bytecode Java 21).
+      </div>
       <h3>Installation pas à pas</h3>
       <ol class="steps">
-        <li>Installe un JDK 17+ : <code>sudo apt install openjdk-17-jdk</code> (Linux) ou télécharge Adoptium (Windows/macOS).</li>
+        <li>Installe un JDK : <code>sudo apt install openjdk-21-jdk</code> (Linux) ou télécharge Adoptium (Windows/macOS).</li>
         <li>Télécharge Ghidra depuis <code>ghidra-sre.org</code> ou la page GitHub officielle.</li>
         <li>Décompresse l'archive dans un dossier (pas d'installeur).</li>
         <li>Lance <code>ghidraRun</code> (Linux/macOS) ou <code>ghidraRun.bat</code> (Windows).</li>
         <li>Accepte la licence et choisis ton répertoire de travail.</li>
       </ol>
-      <div class="callout">
-        <strong>💡 Astuce</strong>
-        Si Ghidra ne démarre pas, vérifie que <code>java -version</code> renvoie bien 17+ dans un terminal. Le chemin du JDK peut être forcé dans <code>support/launch.properties</code>.
-      </div>
       <div class="callout success">
         <strong>✅ Nouveauté Ghidra 11.3+</strong>
         Le support Python 3 natif via <strong>PyGhidra</strong> est désormais intégré. Plus besoin de Jython pour les scripts modernes.
@@ -246,338 +277,189 @@
         <li>la reconstruction des chaînes de caractères,</li>
         <li>l'identification des appels de bibliothèques,</li>
         <li>la propagation des types et des symboles,</li>
-        <li>la détection des constantes cryptographiques (via analyseurs).</li>
+        <li>la détection des constantes cryptographiques.</li>
       </ul>
       <div class="callout warn">
         <strong>Binaire volumineux ?</strong>
-        Décoche les analyseurs lents (<em>Decompiler Parameter ID</em>, <em>Aggressive Instruction Finder</em>) pour un premier passage rapide. Tu pourras les relancer plus tard sur des fonctions ciblées.
+        Décoche les analyseurs lents (<em>Decompiler Parameter ID</em>, <em>Aggressive Instruction Finder</em>) pour un premier passage rapide.
       </div>
       <h3>Re-analyser après modification</h3>
-      <p>Si tu modifies des types ou des signatures, tu peux relancer l'analyse sur une zone sélectionnée : <code>Analysis → Re-analyze Selection</code>.</p>
+      <p>Si tu modifies des types ou des signatures : <code>Analysis → Re-analyze Selection</code>.</p>
     </section>
 
     <section id="interface">
       <h2>4. Interface complète</h2>
-      <p>La vue principale (CodeBrowser) regroupe plusieurs fenêtres essentielles :</p>
       <table>
         <tr><th>Fenêtre</th><th>Rôle</th></tr>
         <tr><td><strong>Program Trees</strong></td><td>Sections, segments et mémoire du binaire.</td></tr>
-        <tr><td><strong>Symbol Tree</strong></td><td>Fonctions, imports, exports, labels. Point de départ pour la navigation.</td></tr>
+        <tr><td><strong>Symbol Tree</strong></td><td>Fonctions, imports, exports, labels.</td></tr>
         <tr><td><strong>Listing</strong></td><td>Désassemblage brut, instruction par instruction.</td></tr>
-        <tr><td><strong>Decompiler</strong></td><td>Pseudo-code C reconstruit. La vue la plus utile au quotidien.</td></tr>
-        <tr><td><strong>Data Type Manager</strong></td><td>Types définis, structures, énumérations. Indispensable pour nettoyer le décompilé.</td></tr>
-        <tr><td><strong>Function Graph</strong></td><td>Graphe de flux de contrôle (CFG) de la fonction courante.</td></tr>
-        <tr><td><strong>Breakpoints</strong></td><td>Gestion des points d'arrêt (debugger).</td></tr>
-        <tr><td><strong>Registers / Stack / Threads</strong></td><td>État du processus en cours de debug.</td></tr>
+        <tr><td><strong>Decompiler</strong></td><td>Pseudo-code C reconstruit.</td></tr>
+        <tr><td><strong>Data Type Manager</strong></td><td>Types, structures, énumérations.</td></tr>
+        <tr><td><strong>Function Graph</strong></td><td>Graphe de flux de contrôle (CFG).</td></tr>
+        <tr><td><strong>Breakpoints</strong></td><td>Points d'arrêt (debugger).</td></tr>
+        <tr><td><strong>Registers / Stack / Threads</strong></td><td>État du processus en debug.</td></tr>
       </table>
       <div class="callout">
         <strong>💡 Astuce</strong>
-        Réorganise ces fenêtres par glisser-déposer et sauvegarde la disposition avec <code>Window → Save Layout</code>. Tu peux aussi créer plusieurs layouts selon tes tâches (analyse statique, debug, scripting).
+        Sauvegarde la disposition avec <code>Window → Save Layout</code>.
       </div>
     </section>
 
     <section id="decompiler">
       <h2>5. Décompilateur avancé</h2>
-      <p>Ouvre-le via <code>Window → Decompiler</code>. Place ton curseur sur une fonction dans le <em>Listing</em> ou le <em>Symbol Tree</em> et le décompilateur affiche son pseudo-code.</p>
+      <p>Ouvre-le via <code>Window → Decompiler</code>.</p>
       <h3>Améliorer le décompilé</h3>
       <ol class="steps">
-        <li><strong>Renomme</strong> les variables et fonctions (<kbd>L</kbd>). Le décompilateur propage automatiquement les noms dans les fonctions appelantes.</li>
-        <li><strong>Retype</strong> les variables (<kbd>Ctrl</kbd>+<kbd>L</kbd>). Un <code>undefined8</code> peut devenir un <code>HANDLE</code>, <code>LPVOID</code> ou une structure.</li>
-        <li><strong>Définis des structures</strong> dans le <em>Data Type Manager</em> et applique-les aux pointeurs. Le décompilé devient beaucoup plus lisible.</li>
-        <li><strong>Corrige les signatures de fonctions</strong> via l'éditeur de signature (clic droit → <em>Edit Function Signature</em> ou <kbd>;</kbd>).</li>
-        <li><strong>Ajoute des commentaires</strong> (touche <kbd>;</kbd> ou clic droit → <em>Comments</em>). Ils survivent aux ré-analyses.</li>
+        <li><strong>Renomme</strong> les variables (<kbd>L</kbd>).</li>
+        <li><strong>Retype</strong> les variables (<kbd>Ctrl</kbd>+<kbd>L</kbd>).</li>
+        <li><strong>Définis des structures</strong> dans le <em>Data Type Manager</em>.</li>
+        <li><strong>Corrige les signatures</strong> (clic droit → <em>Edit Function Signature</em>).</li>
+        <li><strong>Ajoute des commentaires</strong> (<kbd>;</kbd>).</li>
       </ol>
-      <div class="callout success">
-        <strong>✅ Résultat</strong>
-        Un décompilé bien annoté ressemble à du vrai code C : noms de fonctions explicites, structures claires, types corrects.
-      </div>
-      <h3>Limites du décompilateur</h3>
-      <p>Le décompilé reste une reconstruction heuristique. Certains patterns (code obfusqué, assembleur inline, appels indirects complexes) produisent du code approximatif. Dans ces cas, compare avec le <em>Listing</em> assembleur pour vérifier.</p>
     </section>
 
     <section id="navigation">
       <h2>6. Navigation & XREFs</h2>
-      <p>Les <strong>XREFs</strong> (références croisées) indiquent qui appelle une fonction, qui lit une variable, qui utilise une chaîne. C'est l'outil le plus puissant pour remonter un flux.</p>
       <ol class="steps">
-        <li>Clique sur une fonction, un symbole ou une adresse.</li>
-        <li>Clic droit → <code>References → Show References to</code> (ou <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd>).</li>
-        <li>La liste des appels apparaît en bas. Double-clique pour naviguer.</li>
-        <li>Utilise <kbd>Alt</kbd>+<kbd>←</kbd> pour revenir, <kbd>Alt</kbd>+<kbd>→</kbd> pour avancer.</li>
+        <li>Clique sur une fonction.</li>
+        <li>Clic droit → <code>References → Show References to</code> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd>).</li>
+        <li>Double-clique pour naviguer.</li>
+        <li><kbd>Alt</kbd>+<kbd>←</kbd> / <kbd>Alt</kbd>+<kbd>→</kbd> pour naviguer dans l'historique.</li>
       </ol>
-      <p>Pour aller directement à une adresse : <kbd>G</kbd> puis saisis l'adresse ou le nom du symbole.</p>
-      <h3>Navigation multi-fenêtres</h3>
-      <table>
-        <tr><th>Raccourci</th><th>Action</th></tr>
-        <tr><td><kbd>Ctrl</kbd>+<kbd>F3</kbd></td><td>Focus vers la fenêtre suivante</td></tr>
-        <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F3</kbd></td><td>Focus vers la fenêtre précédente</td></tr>
-        <tr><td><kbd>Ctrl</kbd>+<kbd>J</kbd></td><td>Sauter au prochain composant titré</td></tr>
-        <tr><td><kbd>Ctrl</kbd>+<kbd>3</kbd></td><td>Ouvrir la boîte de dialogue Actions (toutes les commandes)</td></tr>
-      </table>
+      <p>Aller à une adresse : <kbd>G</kbd>.</p>
     </section>
 
     <section id="renommage">
       <h2>7. Renommage & types</h2>
-      <p>Renommer et typer sont les activités principales du reverse engineer. Plus tu documentes, plus le code devient compréhensible.</p>
       <table>
-        <tr><th>Action</th><th>Raccourci / menu</th></tr>
-        <tr><td>Renommer une fonction/variable</td><td><kbd>L</kbd> ou clic droit → <em>Rename</em></td></tr>
-        <tr><td>Retyper une variable</td><td><kbd>Ctrl</kbd>+<kbd>L</kbd> ou clic droit → <em>Retype Variable</em></td></tr>
-        <tr><td>Ajouter un commentaire</td><td><kbd>;</kbd> (commentaire de ligne)</td></tr>
-        <tr><td>Commentaire de fin de ligne</td><td>Clic droit → <em>Comments → Set EOL Comment</em></td></tr>
-        <tr><td>Définir une structure</td><td><em>Data Type Manager</em> → <em>New → Structure</em></td></tr>
-        <tr><td>Éditer la signature de fonction</td><td><kbd>;</kbd> ou clic droit → <em>Edit Function Signature</em></td></tr>
-        <tr><td>Créer une fonction</td><td><kbd>F</kbd> (définir la fonction au curseur)</td></tr>
-        <tr><td>Définir des données</td><td><kbd>D</kbd> (define data)</td></tr>
+        <tr><th>Action</th><th>Raccourci</th></tr>
+        <tr><td>Renommer</td><td><kbd>L</kbd></td></tr>
+        <tr><td>Retyper</td><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td></tr>
+        <tr><td>Commentaire</td><td><kbd>;</kbd></td></tr>
+        <tr><td>Créer fonction</td><td><kbd>F</kbd></td></tr>
+        <tr><td>Définir données</td><td><kbd>D</kbd></td></tr>
       </table>
-      <div class="callout">
-        <strong>💡 Astuce</strong>
-        Utilise le <em>Data Type Manager</em> pour importer des types depuis des fichiers DWARF, C headers ou d'autres binaires. Cela accélère énormément le nettoyage.
-      </div>
     </section>
 
     <section id="recherche">
       <h2>8. Recherche avancée</h2>
-      <p>Trois recherches principales, accessibles depuis le menu <code>Search</code> :</p>
       <ul>
-        <li><strong>Program Text</strong> — recherche dans les instructions et symboles (texte libre).</li>
-        <li><strong>For Strings</strong> — liste toutes les chaînes du binaire, filtrables par regex.</li>
-        <li><strong>Memory</strong> — recherche d'octets ou de motifs hexadécimaux.</li>
+        <li><strong>Program Text</strong> — instructions et symboles.</li>
+        <li><strong>For Strings</strong> — toutes les chaînes du binaire.</li>
+        <li><strong>Memory</strong> — octets ou motifs hex.</li>
       </ul>
       <div class="callout">
         <strong>💡 Astuce</strong>
-        Les chaînes comme <code>"Invalid password"</code>, <code>"Access denied"</code> ou des URLs sont souvent un excellent point de départ : remonte leurs XREFs pour tomber sur la logique de vérification.
+        Les chaînes comme <code>"Invalid password"</code> sont d'excellents points de départ : remonte leurs XREFs.
       </div>
-      <h3>Recherche multi-binaires</h3>
-      <p><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> permet de chercher dans tous les programmes ouverts simultanément (utile pour les bibliothèques partagées).</p>
     </section>
 
     <section id="scripts">
       <h2>9. Scripting (Jython & PyGhidra)</h2>
-      <p>Ghidra est scriptable en <strong>Java</strong>, <strong>Python 2.7 (Jython)</strong> et depuis 11.3 en <strong>Python 3 natif via PyGhidra</strong>.</p>
-      <h3>Jython (Python 2.7)</h3>
-      <p>Scripts hérités, largement documentés. Structure typique :</p>
-      <pre><code># @category Examples
-# @runtime Jython
-from ghidra.app.script import GhidraScript
-
-def main():
-    println("Hello from Jython!")
-
-if __name__ == "__main__":
-    main()</code></pre>
-      <h3>PyGhidra (Python 3 natif) <span class="badge">Recommandé</span></h3>
-      <p>Nouvelle API utilisant CPython 3 via JPype. Accès complet à l'API Java de Ghidra avec la syntaxe Python moderne.</p>
+      <p>Ghidra est scriptable en <strong>Java</strong>, <strong>Jython</strong> et <strong>PyGhidra</strong> (Python 3).</p>
       <pre><code># @runtime PyGhidra
 import pyghidra
-from ghidra.program.flatapi import FlatProgramAPI
-
-# Initialiser Ghidra
 ghidra = pyghidra.Ghidra()
-
-# Charger un binaire
-ghidra.load_program("path/to/binary")
-
-# Analyser
+ghidra.load_program("binaire.exe")
 ghidra.perform_analysis()
-
-# Accéder à une fonction
 function = ghidra.get_function("main")
-print(function.name)
-
-# Exporter le décompilé
-code = function.export_decompiled_code()
-print(code)</code></pre>
+print(function.name)</code></pre>
       <div class="callout success">
-        <strong>✅ Avantages de PyGhidra</strong>
-        <ul style="margin:8px 0 0; padding-left:20px;">
-          <li>Utilise l'écosystème Python 3 (pip, venv, bibliothèques modernes)</li>
-          <li>Auto-complétion et type checking via <code>ghidra.ghidra_builtins</code></li>
-          <li>Intégration VS Code avec édition directe, navigation et debugging</li>
-          <li>Scripts standalone exécutables hors du GUI</li>
-        </ul>
-      </div>
-      <h3>Scripts utiles fournis</h3>
-      <ul>
-        <li><strong>FindCrypt</strong> — détecte les constantes cryptographiques (AES, SHA, RC4…).</li>
-        <li><strong>ExportToC</strong> — exporte le pseudo-code en fichier C.</li>
-        <li><strong>SearchStrings</strong> — recherche avancée de chaînes.</li>
-        <li><strong>Function ID</strong> — identifie les fonctions de bibliothèques connues.</li>
-      </ul>
-      <div class="callout">
-        <strong>💡 Pour aller plus loin</strong>
-        Consulte <a href="https://github.com/AllsafeCyberSecurity/awesome-ghidra" target="_blank" rel="noopener">awesome-ghidra</a> pour une liste curatée de scripts, plugins et outils communautaires.
+        <strong>✅ Avantages PyGhidra</strong>
+        Écosystème Python 3 moderne, auto-complétion, intégration VS Code, scripts standalone.
       </div>
     </section>
 
     <section id="debugger">
       <h2>10. Debugger intégré</h2>
-      <p>Depuis Ghidra 11, un <strong>framework de debugging dynamique</strong> est intégré. Ghidra n'est pas un debugger en soi : il se connecte à des back-ends existants (GDB, LLDB, WinDbg).</p>
-      <h3>Plateformes supportées</h3>
-      <table>
-        <tr><th>Plateforme</th><th>Back-end</th><th>Architecture</th></tr>
-        <tr><td>Linux</td><td>GDB</td><td>x86-64, arm64</td></tr>
-        <tr><td>macOS</td><td>LLDB</td><td>x86-64, Apple Silicon (arm64)</td></tr>
-        <tr><td>Windows</td><td>dbgeng (WinDbg)</td><td>x86-64</td></tr>
-      </table>
-      <h3>Capacités principales</h3>
+      <p>Ghidra 11+ inclut un framework de debugging dynamique qui se connecte à GDB, LLDB ou WinDbg.</p>
       <ul>
-        <li><strong>Trace Recording</strong> — enregistre l'exécution dans une base de données Trace, avec rembobinage pour revoir l'état historique.</li>
-        <li><strong>Program Mapping</strong> — synchronise les vues statique et dynamique. Le curseur suit entre décompilé et exécution réelle.</li>
-        <li><strong>Dynamic Listing</strong> — affiche la mémoire live, la pile, le tas, en temps réel.</li>
-        <li><strong>Breakpoints</strong> — définition via clic droit, <kbd>K</kbd>, ou double-clic dans la marge.</li>
-        <li><strong>Registers / Stack / Threads</strong> — inspection complète de l'état du processus.</li>
+        <li><strong>Trace Recording</strong> — enregistre et rembobine l'exécution.</li>
+        <li><strong>Program Mapping</strong> — synchronise statique et dynamique.</li>
+        <li><strong>Dynamic Listing</strong> — mémoire live en temps réel.</li>
       </ul>
-      <h3>Premiers pas</h3>
-      <ol class="steps">
-        <li>Vérifie que les plugins Debugger sont activés : <code>File → Configure → Configure All Plugins</code>, filtre "Debugger".</li>
-        <li>Charge le tool Debugger par défaut : <code>Tools → Import Default Tools → Debugger.tool</code>.</li>
-        <li>Ouvre le binaire, puis clique sur l'icône <strong>Debug</strong> (bug) dans la barre d'outils.</li>
-        <li>Sélectionne le launcher (gdb, lldb, dbgeng) et configure les options.</li>
-        <li>Place des breakpoints et lance l'exécution.</li>
-      </ol>
-      <div class="callout warn">
-        <strong>⚠️ Performance</strong>
-        L'enregistrement de trace peut être gourmand en mémoire. Pour les longues sessions, augmente le heap JVM dans <code>support/launch.properties</code> (ex : <code>-Xmx8G</code>).
-      </div>
     </section>
 
     <section id="headless">
       <h2>11. Mode headless</h2>
-      <p>Ghidra peut fonctionner <strong>sans interface graphique</strong> pour automatiser l'analyse de binaires en masse, dans des pipelines CI/CD ou des scripts.</p>
-      <h3>Utilisation basique</h3>
-      <pre><code># Analyser un binaire et exporter le décompilé
-$GHIDRA_HOME/support/analyzeHeadless \
+      <pre><code>$GHIDRA_HOME/support/analyzeHeadless \
   /chemin/projet MonProjet \
   -import binaire.exe \
-  -postScript ExportDecompiled.java \
-  -scriptPath /chemin/scripts</code></pre>
-      <h3>Options utiles</h3>
-      <table>
-        <tr><th>Option</th><th>Description</th></tr>
-        <tr><td><code>-import</code></td><td>Importer un fichier</td></tr>
-        <tr><td><code>-process</code></td><td>Traiter un fichier déjà importé</td></tr>
-        <tr><td><code>-postScript</code></td><td>Exécuter un script après analyse</td></tr>
-        <tr><td><code>-preScript</code></td><td>Exécuter un script avant analyse</td></tr>
-        <tr><td><code>-scriptPath</code></td><td>Répertoire des scripts</td></tr>
-        <tr><td><code>-deleteProject</code></td><td>Supprimer le projet après traitement</td></tr>
-        <tr><td><code>-analysisTimeoutPerFile</code></td><td>Timeout d'analyse par fichier (secondes)</td></tr>
-      </table>
-      <div class="callout success">
-        <strong>✅ Cas d'usage</strong>
-        Analyse automatique de malwares, scan de vulnérabilités, génération de rapports, comparaison de versions dans un pipeline.
-      </div>
+  -postScript ExportDecompiled.java</code></pre>
+      <p>Pour automatiser l'analyse en masse ou dans un pipeline CI/CD.</p>
     </section>
 
     <section id="versiontracking">
       <h2>12. Version Tracking & BSim</h2>
-      <h3>Version Tracking</h3>
-      <p>Compare <strong>deux versions d'un même programme</strong> et propage automatiquement l'analyse (symboles, commentaires, types) de l'ancienne vers la nouvelle.</p>
-      <ol class="steps">
-        <li>Lance Version Tracking depuis le GUI : source = ancien exe, destination = nouveau exe.</li>
-        <li>Clique sur la baguette magique pour exécuter tous les corrélateurs et appliquer les correspondances.</li>
-        <li>Ghidra trie ensuite les matches. Tu peux interrompre et vérifier manuellement.</li>
-        <li>Pour plus de matches, utilise un script PyGhidra post-traitement avec des seuils de similarité/confiance.</li>
-      </ol>
-      <h3>BSim (Behavioral Similarity)</h3>
-      <p>Recherche de fonctions similaires <strong>entre binaires différents</strong> (pas seulement entre versions). Utile pour identifier des bibliothèques statiques, du code partagé ou des variantes de malware.</p>
-      <div class="callout">
-        <strong>💡 Astuce</strong>
-        BSim nécessite une base de données PostgreSQL. Configure-la dans <code>Features/BSim</code> avant utilisation.
-      </div>
+      <p><strong>Version Tracking</strong> — compare deux versions d'un même programme et propage l'analyse.</p>
+      <p><strong>BSim</strong> — recherche de similarité entre binaires différents (nécessite PostgreSQL).</p>
     </section>
 
     <section id="plugins">
       <h2>13. Extensions & plugins</h2>
-      <p>Ghidra est extensible via des plugins Java ou Python. La communauté en fournit des centaines.</p>
       <div class="grid-2">
-        <div class="card-sm">
-          <h4>🔐 FindCrypt</h4>
-          <p>Détection de constantes cryptographiques (AES, SHA, RC4, etc.) dans le binaire.</p>
-        </div>
-        <div class="card-sm">
-          <h4>🐹 gotools</h4>
-          <p>Assistance pour le reverse engineering de binaires Go (récupération des noms de fonctions, types).</p>
-        </div>
-        <div class="card-sm">
-          <h4>🌉 ghidra_bridge</h4>
-          <p>Bridge Python 3 pour interagir avec Ghidra depuis un interpréteur externe (IPython, scripts).</p>
-        </div>
-        <div class="card-sm">
-          <h4>🔗 ret-sync</h4>
-          <p>Synchronisation entre Ghidra et un debugger externe (GDB, WinDbg, x64dbg).</p>
-        </div>
-        <div class="card-sm">
-          <h4>📱 JNI Helper</h4>
-          <p>Trouve et applique les signatures JNI dans les APK Android.</p>
-        </div>
-        <div class="card-sm">
-          <h4>🧠 GhidrAssist</h4>
-          <p>Extension LLM pour assistance AI dans le reverse engineering.</p>
-        </div>
-      </div>
-      <div class="callout">
-        <strong>💡 Installation</strong>
-        <code>File → Install Extensions</code> pour les extensions packagées. Pour les scripts, place-les dans <code>~/ghidra_scripts</code> et rafraîchis le Script Manager.
+        <div class="card-sm"><h4>🔐 FindCrypt</h4><p>Constantes cryptographiques (AES, SHA, RC4).</p></div>
+        <div class="card-sm"><h4>🐹 gotools</h4><p>Reverse engineering de binaires Go.</p></div>
+        <div class="card-sm"><h4>🌉 ghidra_bridge</h4><p>Bridge Python 3 externe.</p></div>
+        <div class="card-sm"><h4>🔗 ret-sync</h4><p>Synchronisation GDB/WinDbg/x64dbg.</p></div>
+        <div class="card-sm"><h4>📱 JNI Helper</h4><p>Signatures JNI dans les APK Android.</p></div>
+        <div class="card-sm"><h4>🧠 GhidrAssist</h4><p>Extension LLM pour assistance AI.</p></div>
       </div>
     </section>
 
     <section id="patch">
       <h2>14. Patch & export</h2>
-      <p>Ghidra permet de modifier le binaire analysé :</p>
       <ol class="steps">
         <li>Clic droit sur une instruction → <code>Patch Instruction</code>.</li>
-        <li>Modifie l'assembleur (ou les octets via <em>Patch Data</em>).</li>
-        <li>Pour sauvegarder : <code>File → Export Program</code>, choisis le format d'origine.</li>
+        <li>Modifie l'assembleur ou les octets.</li>
+        <li><code>File → Export Program</code> pour sauvegarder.</li>
       </ol>
       <div class="callout danger">
         <strong>⚠️ Rappel</strong>
-        Patcher un binaire tiers et le redistribuer peut être illégal. Réserve ça à tes propres programmes, aux CTF, ou à l'apprentissage local.
+        Patcher un binaire tiers peut être illégal. Réserve ça à tes propres programmes ou aux CTF.
       </div>
-      <h3>Export vers C</h3>
-      <p><kbd>Ctrl</kbd>+<kbd>E</kbd> exporte la fonction courante en C. Utile pour analyser hors de Ghidra ou pour documenter.</p>
     </section>
 
     <section id="no-admin">
       <h2>15. Installation sans droits admin & contournement de restrictions</h2>
 
-      <p>Sur un poste d'entreprise ou une machine verrouillée, plusieurs restrictions peuvent empêcher Ghidra de démarrer normalement :</p>
+      <p>Sur un poste d'entreprise ou une machine verrouillée, plusieurs restrictions peuvent empêcher Ghidra de démarrer :</p>
       <ul>
-        <li>Pas de droits administrateur (impossible d'installer un JDK dans <code>Program Files</code> ou de modifier <code>PATH</code>)</li>
+        <li>Pas de droits administrateur</li>
         <li><code>cmd.exe</code> bloqué par stratégie de groupe</li>
-        <li>Les fichiers <code>.bat</code> et <code>.cmd</code> bloqués (AppLocker, Software Restriction Policies, WDAC)</li>
+        <li>Fichiers <code>.bat</code> et <code>.cmd</code> bloqués (AppLocker, SRP, WDAC)</li>
+        <li><code>java.exe</code> bloqué par contrôle parental ou autre</li>
         <li>Windows PowerShell soumis à une <em>ExecutionPolicy</em> restrictive</li>
       </ul>
 
-      <h3>La solution : un launcher PowerShell</h3>
-      <p>PowerShell est presque toujours disponible même quand <code>cmd.exe</code> est bloqué, et il n'est pas soumis aux mêmes restrictions d'extension que les <code>.bat</code>. On va donc réimplémenter entièrement <code>ghidraRun.bat</code> en PowerShell.</p>
+      <h3>Stratégie générale</h3>
+      <p>PowerShell est presque toujours disponible même quand <code>cmd.exe</code> est bloqué. On va donc réimplémenter entièrement <code>ghidraRun.bat</code> en PowerShell, sans jamais invoquer <code>cmd.exe</code>.</p>
 
       <div class="callout warn">
         <strong>⚠️ Pourquoi ne pas juste appeler le .bat depuis PowerShell ?</strong>
-        Si le blocage est fait par AppLocker/SRP/WDAC, c'est le noyau Windows qui refuse d'exécuter un <code>.bat</code>, peu importe qui l'appelle. Il faut donc rejouer la logique du script en pur PowerShell, sans jamais invoquer <code>cmd.exe</code>.
+        Si le blocage est fait par AppLocker/SRP/WDAC, c'est le noyau Windows qui refuse d'exécuter un <code>.bat</code>, peu importe qui l'appelle. Il faut rejouer la logique du script en pur PowerShell.
       </div>
 
       <h3>Étape 1 — Extraire Ghidra dans un dossier utilisateur</h3>
-      <p>Sans droits admin, on n'installe pas dans <code>Program Files</code>. On extrait l'archive dans un dossier personnel :</p>
-      <pre><code>C:\Users\TonNom\Documents\ghidra_11.3_PUBLIC\
-C:\Users\TonNom\Desktop\ghidra_11.3_PUBLIC\</code></pre>
+      <pre><code>C:\Users\simon\Documents\ghidra_12.1.4_PUBLIC\
+C:\Users\simon\Desktop\ghidra_12.1.4_PUBLIC\</code></pre>
 
       <h3>Étape 2 — Installer un JDK portable (sans admin)</h3>
-      <p>Télécharge la version <strong>ZIP</strong> (pas le MSI) de Temurin 17 ou 21 : <code>adoptium.net/temurin/releases/</code></p>
+      <p>Télécharge la version <strong>ZIP</strong> (pas le MSI) de Temurin 21 ou 25 : <code>adoptium.net/temurin/releases/</code></p>
       <p>Extrais-le où tu veux, puis définis <code>JAVA_HOME</code> dans ta session PowerShell :</p>
-      <pre><code>$env:JAVA_HOME = "C:\Users\TonNom\Documents\jdk-21.0.2+13"
+      <pre><code>$env:JAVA_HOME = "C:\Users\simon\Documents\jdk-21.0.5+11"
 $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 
-# Vérification
 java -version</code></pre>
       <div class="callout">
         <strong>💡 Astuce</strong>
         Pour rendre <code>JAVA_HOME</code> permanent sans droits admin :
-        <pre style="margin-top:8px;"><code>[Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Users\TonNom\Documents\jdk-21.0.2+13", "User")</code></pre>
-        Cela écrit dans le registre utilisateur (<code>HKCU</code>), pas besoin d'admin.
+        <pre style="margin-top:8px;"><code>[Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Users\simon\Documents\jdk-21.0.5+11", "User")</code></pre>
       </div>
 
       <h3>Étape 3 — Créer le script PowerShell</h3>
-      <p>Crée un fichier <code>ghidraRun.ps1</code> à la racine de Ghidra (à côté de <code>ghidraRun.bat</code>) et colle le contenu suivant :</p>
+      <p>Crée un fichier <code>ghidraRun.ps1</code> à la racine de Ghidra (à côté de <code>ghidraRun.bat</code>) avec le contenu ci-dessous :</p>
 
       <details>
         <summary>📄 Afficher le script complet (ghidraRun.ps1)</summary>
@@ -587,6 +469,7 @@ java -version</code></pre>
       - l'utilisateur n'est pas administrateur
       - cmd.exe est bloqué par stratégie de groupe
       - les fichiers .bat et .cmd sont bloqués (AppLocker/SRP/WDAC)
+      - java.exe est bloqué/renommé (contrôle parental, etc.)
 
     Usage : powershell -ExecutionPolicy Bypass -File .\ghidraRun.ps1
 #&gt;
@@ -597,6 +480,24 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# ============================================================
+# ★★★ CONFIGURATION JAVA ★★★
+# ============================================================
+#
+# Tu peux mettre ici :
+#   - un DOSSIER JDK          → "C:\Users\simon\Documents\jdk-21.0.5+11"
+#   - un EXE renommé          → "C:\...\bin\java_perso.exe"
+#   - un chemin complet .exe  → "C:\...\mon_java.exe"
+#
+# Laisse vide ("") pour la détection automatique.
+#
+$JAVA_HOME_OVERRIDE = ""
+
+# Version minimale de Java requise
+#   Ghidra 11.x → 17
+#   Ghidra 12.x → 21
+$MIN_JAVA_MAJOR = 21
 
 # ============================================================
 # 1. Répertoire d'installation
@@ -630,39 +531,195 @@ if ($env:GHIDRA_GUI_JAVA_OPTIONS) { $VMArgs += ($env:GHIDRA_GUI_JAVA_OPTIONS -sp
 # ============================================================
 # 4. Localisation de Java
 # ============================================================
-function Find-JavaExe {
-    if ($env:JAVA_HOME) {
-        $c = Join-Path $env:JAVA_HOME "bin\java.exe"
-        if (Test-Path $c) { return $c }
+function Get-JavaMajorVersion {
+    param([string]$JavaExe)
+
+    # On lance Java via System.Diagnostics.Process pour contourner
+    # complètement la gestion d'erreur de PowerShell (java -version
+    # écrit sur stderr, ce qui déclenche $ErrorActionPreference = "Stop").
+    try {
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName               = $JavaExe
+        $psi.Arguments              = "-version"
+        $psi.RedirectStandardError  = $true
+        $psi.RedirectStandardOutput = $true
+        $psi.UseShellExecute        = $false
+        $psi.CreateNoWindow         = $true
+
+        $proc = [System.Diagnostics.Process]::Start($psi)
+        $stderr = $proc.StandardError.ReadToEnd()
+        $stdout = $proc.StandardOutput.ReadToEnd()
+        $proc.WaitForExit()
+
+        $combined = $stderr + "`n" + $stdout
+
+        if ($combined -match 'version\s+"(\d+)') {
+            $major = [int]$Matches[1]
+            # Cas spécial : "1.8.0_xxx" → on veut 8, pas 1
+            if ($major -eq 1 -and $combined -match 'version\s+"1\.(\d+)') {
+                $major = [int]$Matches[1]
+            }
+            return $major
+        }
+    } catch { }
+
+    return 0
+}
+
+function Resolve-JavaPath {
+    param([string]$InputPath)
+
+    if (-not $InputPath) { return $null }
+    if (-not (Test-Path $InputPath)) { return $null }
+
+    $item = Get-Item $InputPath -ErrorAction SilentlyContinue
+    if (-not $item) { return $null }
+
+    if ($item.PSIsContainer) {
+        $c1 = Join-Path $item.FullName "bin\java.exe"
+        if (Test-Path $c1) { return $c1 }
+
+        $c2 = Join-Path $item.FullName "bin\javaw.exe"
+        if (Test-Path $c2) { return $c2 }
+
+        $binDir = Join-Path $item.FullName "bin"
+        if (Test-Path $binDir) {
+            $exclude = @('javac.exe','jar.exe','jarsigner.exe','javadoc.exe','jdb.exe',
+                         'jps.exe','jstat.exe','jcmd.exe','jconsole.exe','jlink.exe',
+                         'jmod.exe','jrunscript.exe','jshell.exe','keytool.exe',
+                         'policytool.exe','rmid.exe','rmiregistry.exe','serialver.exe',
+                         'jaccessinspector.exe','jaccesswalker.exe','jabswitch.exe',
+                         'java-rmi.exe','jfr.exe','jhsdb.exe','jinfo.exe','jmap.exe',
+                         'jstack.exe','jstatd.exe','kinit.exe','klist.exe','ktab.exe')
+            $exe = Get-ChildItem "$binDir\*.exe" -ErrorAction SilentlyContinue |
+                   Where-Object { $exclude -notcontains $_.Name.ToLower() } |
+                   Select-Object -First 1
+            if ($exe) { return $exe.FullName }
+        }
+
+        $exe = Get-ChildItem "$($item.FullName)\*.exe" -ErrorAction SilentlyContinue |
+               Select-Object -First 1
+        if ($exe) { return $exe.FullName }
+
+        return $null
     }
-    $cmd = Get-Command java.exe -ErrorAction SilentlyContinue
-    if ($cmd) { return $cmd.Source }
-    $patterns = @(
-        "$env:ProgramFiles\Eclipse Adoptium\*\bin\java.exe",
-        "$env:ProgramFiles\Java\jdk-*\bin\java.exe",
-        "$env:ProgramFiles\Microsoft\jdk-*\bin\java.exe",
-        "$env:LOCALAPPDATA\Programs\Eclipse Adoptium\*\bin\java.exe",
-        "$env:LOCALAPPDATA\Programs\Microsoft\jdk-*\bin\java.exe",
-        "$env:USERPROFILE\.jdks\*\bin\java.exe",
-        "$env:USERPROFILE\jdk-*\bin\java.exe"
-    )
-    foreach ($p in $patterns) {
-        $hit = Get-ChildItem $p -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($hit) { return $hit.FullName }
+
+    if ($item.Extension -ieq ".exe") {
+        return $item.FullName
     }
+
     return $null
 }
 
-$javaExe = Find-JavaExe
-if (-not $javaExe) {
-    Write-Host "ERREUR : Java introuvable." -ForegroundColor Red
-    Write-Host "Installez un JDK 17+ (portable possible) ou définissez JAVA_HOME." -ForegroundColor Yellow
+function Find-JavaExe {
+    $candidates = New-Object System.Collections.Generic.List[string]
+
+    if ($JAVA_HOME_OVERRIDE) {
+        $resolved = Resolve-JavaPath -InputPath $JAVA_HOME_OVERRIDE
+        if ($resolved) { $candidates.Add($resolved) | Out-Null }
+    }
+
+    if ($env:GHIDRA_JAVA_HOME) {
+        $resolved = Resolve-JavaPath -InputPath $env:GHIDRA_JAVA_HOME
+        if ($resolved) { $candidates.Add($resolved) | Out-Null }
+    }
+
+    if ($env:JAVA_HOME) {
+        $c = Join-Path $env:JAVA_HOME "bin\java.exe"
+        if (Test-Path $c) { $candidates.Add($c) | Out-Null }
+    }
+
+    $portablePatterns = @(
+        "$env:USERPROFILE\Documents\jdk*\bin\*.exe",
+        "$env:USERPROFILE\Documents\jdk-*\bin\*.exe",
+        "$env:USERPROFILE\Desktop\jdk*\bin\*.exe",
+        "$env:USERPROFILE\jdk*\bin\*.exe",
+        "$env:USERPROFILE\jdk-*\bin\*.exe",
+        "$env:USERPROFILE\.jdks\*\bin\java.exe",
+        "$env:LOCALAPPDATA\Programs\Eclipse Adoptium\*\bin\java.exe",
+        "$env:LOCALAPPDATA\Programs\Microsoft\jdk-*\bin\java.exe",
+        "$env:LOCALAPPDATA\Programs\Java\jdk-*\bin\java.exe"
+    )
+    foreach ($p in $portablePatterns) {
+        Get-ChildItem $p -ErrorAction SilentlyContinue | ForEach-Object {
+            $candidates.Add($_.FullName) | Out-Null
+        }
+    }
+
+    $systemPatterns = @(
+        "$env:ProgramFiles\Eclipse Adoptium\*\bin\java.exe",
+        "$env:ProgramFiles\Java\jdk-*\bin\java.exe",
+        "$env:ProgramFiles\Microsoft\jdk-*\bin\java.exe",
+        "$env:ProgramFiles\Amazon Corretto\*\bin\java.exe",
+        "$env:ProgramFiles\BellSoft\LibericaJDK-*\bin\java.exe"
+    )
+    foreach ($p in $systemPatterns) {
+        Get-ChildItem $p -ErrorAction SilentlyContinue | ForEach-Object {
+            $candidates.Add($_.FullName) | Out-Null
+        }
+    }
+
+    $cmd = Get-Command java.exe -ErrorAction SilentlyContinue
+    if ($cmd -and $cmd.Source -notmatch 'javapath') {
+        $candidates.Add($cmd.Source) | Out-Null
+    }
+
+    $seen = @{}
+    $unique = @()
+    foreach ($c in $candidates) {
+        if (-not $c) { continue }
+        $key = $c.ToLower()
+        if (-not $seen.ContainsKey($key)) {
+            $seen[$key] = $true
+            $unique += $c
+        }
+    }
+
+    if ($JAVA_HOME_OVERRIDE) {
+        $forced = Resolve-JavaPath -InputPath $JAVA_HOME_OVERRIDE
+        if (-not $forced) {
+            Write-Host ""
+            Write-Host "ERREUR : impossible de trouver un java.exe valide." -ForegroundColor Red
+            Write-Host "  Entrée : $JAVA_HOME_OVERRIDE" -ForegroundColor Yellow
+            exit 1
+        }
+        $major = Get-JavaMajorVersion -JavaExe $forced
+        if ($major -lt $MIN_JAVA_MAJOR) {
+            Write-Host ""
+            Write-Host "ERREUR : version Java trop ancienne." -ForegroundColor Red
+            Write-Host "  Chemin  : $forced" -ForegroundColor Yellow
+            Write-Host "  Version : $major (minimum requis : $MIN_JAVA_MAJOR)" -ForegroundColor Yellow
+            exit 1
+        }
+        return @{ Path = $forced; Major = $major }
+    }
+
+    $tooOld = @()
+    foreach ($c in $unique) {
+        if (-not (Test-Path $c)) { continue }
+        $major = Get-JavaMajorVersion -JavaExe $c
+        if ($major -ge $MIN_JAVA_MAJOR) {
+            return @{ Path = $c; Major = $major }
+        } elseif ($major -gt 0) {
+            $tooOld += "$c (Java $major)"
+        }
+    }
+
+    Write-Host ""
+    Write-Host "ERREUR : aucun JDK $MIN_JAVA_MAJOR+ trouvé." -ForegroundColor Red
+    if ($tooOld.Count -gt 0) {
+        Write-Host "Versions trop anciennes détectées :" -ForegroundColor Yellow
+        $tooOld | ForEach-Object { Write-Host "  - $_" -ForegroundColor Yellow }
+    }
     exit 1
 }
 
+$javaInfo  = Find-JavaExe
+$javaExe   = $javaInfo.Path
+$javaMajor = $javaInfo.Major
+
 # ============================================================
 # 5. Construction du classpath
-#    Ghidra/&lt;Catégorie&gt;/&lt;Module&gt;/lib/*.jar  +  support/*.jar
 # ============================================================
 $classpathParts = New-Object System.Collections.Generic.List[string]
 
@@ -709,46 +766,41 @@ Write-Host ""
 Write-Host "  Ghidra Launcher (PowerShell)" -ForegroundColor Cyan
 Write-Host "  ----------------------------" -ForegroundColor Cyan
 Write-Host "  Installation : $GhidraDir"
-Write-Host "  Java         : $javaExe"
+Write-Host "  Java         : $javaExe (Java $javaMajor)"
 Write-Host "  JARs         : $($classpathParts.Count)"
 Write-Host "  Mémoire      : $(if ($env:GHIDRA_GUI_MAXMEM) { $env:GHIDRA_GUI_MAXMEM } else { 'défaut JVM' })"
 Write-Host ""
 
-# java.exe  = avec console (utile pour voir les erreurs)
-# javaw.exe = sans console (recommandé en usage normal)
 $javaLaunch = $javaExe
 
 Start-Process -FilePath $javaLaunch -ArgumentList $argString -NoNewWindow -Wait</code></pre>
       </details>
 
       <h3>Étape 4 — Lancer Ghidra</h3>
-      <p>Ouvre une fenêtre <strong>PowerShell</strong> (pas cmd) et lance :</p>
-      <pre><code>cd C:\Users\TonNom\Documents\ghidra_11.3_PUBLIC
+      <pre><code>cd "C:\Users\simon\OneDrive - OGEC LILLE\informatique test\app\ghidra\ghidra_12.1.4_PUBLIC"
 powershell -ExecutionPolicy Bypass -File .\ghidraRun.ps1</code></pre>
 
       <div class="callout">
         <strong>💡 Pourquoi <code>-ExecutionPolicy Bypass</code> ?</strong>
-        Windows bloque par défaut l'exécution des scripts <code>.ps1</code>. Cette option contourne la restriction <em>uniquement pour cette exécution</em>, sans modifier la politique système (donc sans droits admin).
+        Windows bloque par défaut l'exécution des scripts <code>.ps1</code>. Cette option contourne la restriction <em>uniquement pour cette exécution</em>, sans modifier la politique système.
       </div>
 
       <h3>Alternative : raccourci Windows (double-clic)</h3>
-      <p>Pour lancer Ghidra d'un simple double-clic sans passer par un terminal :</p>
       <ol class="steps">
         <li>Clic droit sur le bureau → <em>Nouveau → Raccourci</em>.</li>
-        <li>Dans <strong>Cible</strong>, colle :
-          <pre style="margin-top:8px;"><code>powershell.exe -ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File "C:\Users\TonNom\Documents\ghidra_11.3_PUBLIC\ghidraRun.ps1"</code></pre>
+        <li>Dans <strong>Cible</strong> :
+          <pre style="margin-top:8px;"><code>powershell.exe -ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File "C:\Users\simon\OneDrive - OGEC LILLE\informatique test\app\ghidra\ghidra_12.1.4_PUBLIC\ghidraRun.ps1"</code></pre>
         </li>
         <li>Nom : <strong>Ghidra</strong>.</li>
-        <li>Pour l'icône : clic droit → Propriétés → Changer d'icône → sélectionne <code>ghidraRun.ico</code> dans le dossier Ghidra.</li>
+        <li>Icône : <code>ghidraRun.ico</code>.</li>
       </ol>
 
       <h3>Si même PowerShell est bloqué</h3>
-      <p>Dans ce cas extrême, plusieurs pistes de secours :</p>
       <ul>
-        <li><strong>Lance <code>javaw.exe</code> directement</strong> depuis un raccourci <code>.lnk</code>, sans passer par un script. Construis la ligne de commande manuellement à partir des arguments de <code>ghidraRun.ps1</code>.</li>
-        <li><strong>Utilise une VM locale</strong> (VirtualBox portable, Hyper-V si activé) où tu installes Ghidra sans restriction.</li>
-        <li><strong>Clé USB bootable</strong> avec un Linux live (Tails, Ubuntu) : aucune restriction Windows ne s'applique.</li>
-        <li><strong>Demande une exception à l'IT</strong> pour le dossier Ghidra — c'est la solution propre et durable si tu dois l'utiliser régulièrement.</li>
+        <li><strong>Lance <code>javaw.exe</code> directement</strong> depuis un raccourci <code>.lnk</code>.</li>
+        <li><strong>VM locale</strong> (VirtualBox portable).</li>
+        <li><strong>Clé USB bootable</strong> Linux live.</li>
+        <li><strong>Demande une exception à l'IT</strong>.</li>
       </ul>
 
       <h3>Comparatif .bat ↔ PowerShell</h3>
@@ -757,15 +809,183 @@ powershell -ExecutionPolicy Bypass -File .\ghidraRun.ps1</code></pre>
         <tr><td><code>@echo off</code></td><td><code>$ErrorActionPreference = "Stop"</code></td></tr>
         <tr><td><code>set MAXMEM_DEFAULT=</code></td><td><code>$MAXMEM_DEFAULT = ""</code></td></tr>
         <tr><td><code>if not defined X set X=Y</code></td><td><code>if (-not $env:X) { $env:X = "Y" }</code></td></tr>
-        <tr><td><code>set VMARG_LIST=%A% %B%</code></td><td><code>$VMArgs = @(); $VMArgs += ...</code></td></tr>
         <tr><td><code>call support\launch.bat ...</code></td><td>Réimplémenté : find Java + classpath + run</td></tr>
         <tr><td><code>%~dp0</code></td><td><code>$MyInvocation.MyCommand.Definition</code></td></tr>
         <tr><td><code>%*</code> (args utilisateur)</td><td><code>$GhidraArgs</code></td></tr>
       </table>
+    </section>
+
+    <section id="errors">
+      <h2>15.1 Erreurs rencontrées & solutions</h2>
+      <p>Voici tous les problèmes rencontrés lors de la mise en place du launcher PowerShell, avec leur diagnostic et leur correctif.</p>
+
+      <div class="problem">
+        <h3>Erreur 1 — <code>UnsupportedClassVersionError</code></h3>
+        <p>Au lancement, Java refuse d'exécuter Ghidra car il est trop ancien :</p>
+        <div class="error-box">Error: A JNI error has occurred, please check your installation and try again
+Exception in thread "main" java.lang.UnsupportedClassVersionError:
+ghidra/GhidraRun has been compiled by a more recent version of the Java Runtime
+(class file version 65.0), this version of the Java Runtime only recognizes
+class file versions up to 52.0
+        at java.lang.ClassLoader.defineClass1(Native Method)
+        ...</div>
+
+        <h4>Diagnostic</h4>
+        <ul>
+          <li><code>class file version 65.0</code> = <strong>Java 21</strong> (ce que Ghidra attend)</li>
+          <li><code>class file version 52.0</code> = <strong>Java 8</strong> (ce que ton système a lancé)</li>
+        </ul>
+        <p>Le script a trouvé un vieux Java 8 quelque part dans le <code>PATH</code> ou dans un dossier système.</p>
+
+        <h4>Table de correspondance</h4>
+        <table>
+          <tr><th>Class file version</th><th>Version Java</th></tr>
+          <tr><td>52.0</td><td>Java 8</td></tr>
+          <tr><td>55.0</td><td>Java 11</td></tr>
+          <tr><td>61.0</td><td>Java 17</td></tr>
+          <tr><td>65.0</td><td>Java 21</td></tr>
+          <tr><td>66.0</td><td>Java 22</td></tr>
+          <tr><td>67.0</td><td>Java 23</td></tr>
+          <tr><td>68.0</td><td>Java 24</td></tr>
+          <tr><td>69.0</td><td>Java 25</td></tr>
+        </table>
+
+        <div class="fix-box">
+          <strong>✅ Solution</strong>
+          Utilise la variable <code>$JAVA_HOME_OVERRIDE</code> en haut du script pour pointer explicitement vers ton JDK 21+ :
+          <pre style="margin-top:8px;"><code>$JAVA_HOME_OVERRIDE = "C:\Users\simon\Documents\jdk-21.0.5+11"</code></pre>
+        </div>
+      </div>
+
+      <div class="problem">
+        <h3>Erreur 2 — Le stub Oracle <code>javapath</code></h3>
+        <p>Le script affichait :</p>
+        <div class="error-box">Java : C:\Program Files (x86)\Common Files\Oracle\Java\javapath\java.exe</div>
+        <p>Ce chemin est un <strong>faux Java</strong> installé par Oracle qui pointe vers une JRE 8. Il est placé dans le <code>PATH</code> système avant toute autre installation.</p>
+
+        <div class="fix-box">
+          <strong>✅ Solution</strong>
+          Le script exclut désormais les chemins contenant <code>javapath</code> :
+          <pre style="margin-top:8px;"><code>if ($cmd -and $cmd.Source -notmatch 'javapath') {
+    $candidates.Add($cmd.Source) | Out-Null
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="problem">
+        <h3>Erreur 3 — <code>java.exe</code> renommé (contrôle parental)</h3>
+        <p>Si <code>java.exe</code> est bloqué par un contrôle parental ou une politique, tu peux le renommer (par exemple <code>java_perso.exe</code>). Le script doit pouvoir accepter ce nouveau nom.</p>
+
+        <div class="fix-box">
+          <strong>✅ Solution</strong>
+          Le script accepte maintenant <strong>soit un dossier JDK, soit un fichier .exe direct</strong>, et scanne le dossier <code>bin\</code> à la recherche de n'importe quel <code>.exe</code> (en excluant les outils JDK connus comme <code>javac.exe</code>, <code>jar.exe</code>, etc.).
+          <pre style="margin-top:8px;"><code># Les deux fonctionnent :
+$JAVA_HOME_OVERRIDE = "C:\...\jdk-25.0.4"
+$JAVA_HOME_OVERRIDE = "C:\...\jdk-25.0.4\bin\java_perso.exe"</code></pre>
+        </div>
+      </div>
+
+      <div class="problem">
+        <h3>Erreur 4 — <code>Version : 0</code> (bug PowerShell)</h3>
+        <p>Après avoir ajouté la vérification de version, le script affichait :</p>
+        <div class="error-box">ERREUR : version Java trop ancienne.
+  Chemin  : C:\Users\simon\OneDrive - OGEC LILLE\loisir\java\java 25\jdk-25.0.4\bin\java.exe
+  Version : 0 (minimum requis : 21)</div>
+        <p>Pourtant ce Java <strong>est bien un Java 25</strong>.</p>
+
+        <h4>Diagnostic</h4>
+        <p><code>java -version</code> écrit sa sortie sur <strong>stderr</strong> (pas stdout). Avec <code>$ErrorActionPreference = "Stop"</code> en haut du script, PowerShell considérait cette sortie comme une erreur fatale, le <code>try/catch</code> l'avalait, et la fonction retournait <code>0</code>.</p>
+
+        <div class="fix-box">
+          <strong>✅ Solution</strong>
+          On lance Java via <code>System.Diagnostics.Process</code> avec <code>RedirectStandardError = $true</code>, ce qui contourne complètement le système d'erreur de PowerShell :
+          <pre style="margin-top:8px;"><code>$psi = New-Object System.Diagnostics.ProcessStartInfo
+$psi.FileName               = $JavaExe
+$psi.Arguments              = "-version"
+$psi.RedirectStandardError  = $true
+$psi.RedirectStandardOutput = $true
+$psi.UseShellExecute        = $false
+$psi.CreateNoWindow         = $true
+
+$proc = [System.Diagnostics.Process]::Start($psi)
+$stderr = $proc.StandardError.ReadToEnd()
+$stdout = $proc.StandardOutput.ReadToEnd()
+$proc.WaitForExit()
+
+$combined = $stderr + "`n" + $stdout
+# Puis regex sur $combined</code></pre>
+        </div>
+
+        <div class="callout">
+          <strong>💡 Leçon</strong>
+          Ne jamais utiliser <code>& $exe args</code> directement pour lire la sortie d'un exécutable qui écrit sur stderr, surtout avec <code>$ErrorActionPreference = "Stop"</code>. Utiliser <code>System.Diagnostics.Process</code> est plus fiable.
+        </div>
+      </div>
+
+      <div class="problem">
+        <h3>Erreur 5 — Java 25 accepté ?</h3>
+        <p>Question légitime : Ghidra 12.x est compilé pour Java 21 (class file 65.0). Est-ce qu'un Java 25 (class file 69.0) peut l'exécuter ?</p>
+
+        <div class="fix-box">
+          <strong>✅ Oui, sans problème</strong>
+          Java est <strong>rétrocompatible à sens unique</strong> :
+          <ul style="margin-top:8px;">
+            <li>Un JVM Java 25 peut exécuter du bytecode compilé pour Java 21, 17, 11… ✅</li>
+            <li>Un JVM Java 8 ne peut PAS exécuter du bytecode Java 21 ❌ (c'est l'erreur <code>UnsupportedClassVersionError</code>)</li>
+          </ul>
+          Donc <code>$MIN_JAVA_MAJOR = 21</code> et accepter tout ce qui est ≥ 21 est correct.
+        </div>
+      </div>
+
+      <div class="problem">
+        <h3>Erreur 6 — Le script ne trouve aucun JAR</h3>
+        <p>Si tu vois :</p>
+        <div class="error-box">ERREUR : aucun JAR trouvé dans C:\...\ghidra_12.1.4_PUBLIC.</div>
+        <p>Cela signifie que la structure de l'installation Ghidra n'est pas reconnue.</p>
+
+        <div class="fix-box">
+          <strong>✅ Vérifications</strong>
+          <ul style="margin-top:8px;">
+            <li>Le dossier doit contenir un sous-dossier <code>Ghidra\</code> (attention à la casse : Ghidra, pas ghidra).</li>
+            <li>Le sous-dossier <code>Ghidra\</code> doit contenir des catégories (<code>Features</code>, <code>Framework</code>, <code>Processors</code>…).</li>
+            <li>Chaque module doit avoir un sous-dossier <code>lib\</code> avec des fichiers <code>.jar</code>.</li>
+            <li>Si tu as extrait l'archive dans un sous-dossier en trop, déplace le contenu.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="problem">
+        <h3>Erreur 7 — <code>Impossible de charger le fichier ... car l'exécution de scripts est désactivée</code></h3>
+        <p>Erreur classique de PowerShell au lancement d'un <code>.ps1</code>.</p>
+
+        <div class="fix-box">
+          <strong>✅ Solution</strong>
+          Utilise <code>-ExecutionPolicy Bypass</code> :
+          <pre style="margin-top:8px;"><code>powershell -ExecutionPolicy Bypass -File .\ghidraRun.ps1</code></pre>
+          Cette option n'a pas besoin de droits admin et ne modifie rien de permanent.
+        </div>
+      </div>
+
+      <div class="problem">
+        <h3>Erreur 8 — <code>Start-Process : Accès refusé</code></h3>
+        <p>Si le lancement de Java échoue avec un accès refusé.</p>
+
+        <div class="fix-box">
+          <strong>✅ Causes possibles</strong>
+          <ul style="margin-top:8px;">
+            <li>Antivirus qui bloque l'exécution de <code>java.exe</code> renommé → ajoute une exception.</li>
+            <li>Contrôle parental → l'exe renommé contourne parfois, sinon change de nom à nouveau.</li>
+            <li>Le fichier a été bloqué par Windows (marqué "non approuvé") : clic droit sur l'exe → Propriétés → Débloquer.</li>
+          </ul>
+        </div>
+      </div>
 
       <div class="callout success">
-        <strong>✅ Vérification rapide</strong>
-        Si le script affiche le nombre de JARs, le chemin Java et la mémoire, puis lance Ghidra : c'est bon. En cas d'erreur Java, relance avec <code>javaw.exe</code> remplacé par <code>java.exe</code> (déjà le cas par défaut) pour voir le message complet.
+        <strong>✅ Résumé de la config finale qui fonctionne</strong>
+        <pre style="margin-top:8px;"><code># Dans ghidraRun.ps1
+$JAVA_HOME_OVERRIDE = "C:\Users\simon\OneDrive - OGEC LILLE\loisir\java\java 25\jdk-25.0.4"
+$MIN_JAVA_MAJOR = 21</code></pre>
+        Et lancer avec <code>powershell -ExecutionPolicy Bypass -File .\ghidraRun.ps1</code>.
       </div>
 
       <details>
@@ -796,34 +1016,34 @@ call "%~dp0support\launch.bat" bg jdk Ghidra "%GHIDRA_GUI_MAXMEM%" "%VMARG_LIST%
         <tr><td><kbd>T</kbd></td><td>Définir le type de données</td></tr>
         <tr><td><kbd>D</kbd></td><td>Définir des données au curseur</td></tr>
         <tr><td><kbd>F</kbd></td><td>Créer une fonction</td></tr>
-        <tr><td><kbd>;</kbd></td><td>Commentaire de ligne / éditer signature</td></tr>
-        <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Retyper la variable sous le curseur</td></tr>
+        <tr><td><kbd>;</kbd></td><td>Commentaire / signature</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Retyper la variable</td></tr>
         <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd></td><td>Références vers le curseur</td></tr>
         <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td><td>Références depuis le curseur</td></tr>
         <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>Recherche multi-programmes</td></tr>
         <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>Exporter en C</td></tr>
-        <tr><td><kbd>Alt</kbd>+<kbd>←</kbd></td><td>Retour (navigation)</td></tr>
-        <tr><td><kbd>Alt</kbd>+<kbd>→</kbd></td><td>Avancer (navigation)</td></tr>
-        <tr><td><kbd>Ctrl</kbd>+<kbd>3</kbd></td><td>Boîte de dialogue Actions (toutes les commandes)</td></tr>
-        <tr><td><kbd>F5</kbd></td><td>Rafraîchir la vue</td></tr>
+        <tr><td><kbd>Alt</kbd>+<kbd>←</kbd></td><td>Retour</td></tr>
+        <tr><td><kbd>Alt</kbd>+<kbd>→</kbd></td><td>Avancer</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>3</kbd></td><td>Boîte Actions</td></tr>
+        <tr><td><kbd>F5</kbd></td><td>Rafraîchir</td></tr>
       </table>
     </section>
 
     <section id="bonnes">
       <h2>Bonnes pratiques</h2>
       <ul>
-        <li><strong>Copie de travail</strong> — analyse toujours une copie du binaire, jamais l'original.</li>
-        <li><strong>Documente</strong> — note tes hypothèses dans un fichier texte à côté du projet.</li>
-        <li><strong>Renomme tôt</strong> — même un nom approximatif (<code>check_password</code>) vaut mieux que <code>FUN_00401234</code>.</li>
-        <li><strong>Snapshots de projet</strong> — utilise les snapshots Ghidra avant une grosse session de patch.</li>
-        <li><strong>Malware</strong> — analyse en VM isolée, sans réseau, avec snapshot de restauration.</li>
-        <li><strong>Heap JVM</strong> — pour les gros binaires, augmente la mémoire : <code>-Xmx8G</code> dans <code>launch.properties</code>.</li>
-        <li><strong>Reste légal</strong> — CTF, crackmes, tes propres binaires. Pas de cracking commercial.</li>
-        <li><strong>Scripts versionnés</strong> — garde tes scripts dans un dépôt Git séparé.</li>
+        <li><strong>Copie de travail</strong> — analyse toujours une copie du binaire.</li>
+        <li><strong>Documente</strong> — note tes hypothèses dans un fichier à côté du projet.</li>
+        <li><strong>Renomme tôt</strong> — même approximatif, un nom vaut mieux que <code>FUN_00401234</code>.</li>
+        <li><strong>Snapshots</strong> — avant une grosse session de patch.</li>
+        <li><strong>Malware</strong> — VM isolée, sans réseau.</li>
+        <li><strong>Heap JVM</strong> — <code>-Xmx8G</code> dans <code>launch.properties</code> pour les gros binaires.</li>
+        <li><strong>Reste légal</strong> — CTF, crackmes, tes propres binaires.</li>
+        <li><strong>Scripts versionnés</strong> — dépôt Git séparé.</li>
       </ul>
       <div class="callout success">
         <strong>🎯 Pour progresser</strong>
-        Entraîne-toi sur des crackmes.one, des challenges picoCTF ou Root-Me (catégorie <em>Cracking</em>). C'est le meilleur terrain d'apprentissage.
+        crackmes.one, picoCTF, Root-Me (catégorie <em>Cracking</em>).
       </div>
     </section>
 
@@ -831,11 +1051,11 @@ call "%~dp0support\launch.bat" bg jdk Ghidra "%GHIDRA_GUI_MAXMEM%" "%VMARG_LIST%
       <h2>Ressources</h2>
       <table>
         <tr><th>Ressource</th><th>Description</th></tr>
-        <tr><td><strong>The Ghidra Book, 2nd Edition</strong></td><td>Livre de référence (Kara Nance & Chris Eagle, No Starch Press, 2026). Couvre BSim, PyGhidra, debugging et headless.</td></tr>
-        <tr><td><strong>awesome-ghidra</strong></td><td>Liste curatée de scripts, plugins, outils et tutoriels communautaires.</td></tr>
-        <tr><td><strong>Ghidra Docs officielles</strong></td><td>Documentation intégrée (F1) et en ligne sur <code>ghidradocs.com</code>.</td></tr>
-        <tr><td><strong>crackmes.one</strong></td><td>Challenges de reverse engineering légaux, tous niveaux.</td></tr>
-        <tr><td><strong>picoCTF / Root-Me</strong></td><td>Compétitions et challenges pour s'entraîner.</td></tr>
+        <tr><td><strong>The Ghidra Book, 2nd Edition</strong></td><td>Livre de référence (No Starch Press).</td></tr>
+        <tr><td><strong>awesome-ghidra</strong></td><td>Liste curatée de scripts et plugins.</td></tr>
+        <tr><td><strong>Ghidra Docs officielles</strong></td><td>Documentation intégrée (F1).</td></tr>
+        <tr><td><strong>crackmes.one</strong></td><td>Challenges légaux de reverse engineering.</td></tr>
+        <tr><td><strong>picoCTF / Root-Me</strong></td><td>Compétitions et challenges.</td></tr>
       </table>
     </section>
   </main>
@@ -843,7 +1063,7 @@ call "%~dp0support\launch.bat" bg jdk Ghidra "%GHIDRA_GUI_MAXMEM%" "%VMARG_LIST%
 
 <footer>
   Guide Ghidra Complet — à utiliser sur des binaires que tu possèdes ou en contexte légal (CTF, apprentissage).<br>
-  Basé sur Ghidra 11.x et les pratiques de la communauté.
+  Basé sur Ghidra 12.x, Java 21+, et les retours d'expérience en environnement restreint.
 </footer>
 
 <script>
