@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide Ghidra – Reverse Engineering</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #f6f8fa;
+    --card: #ffffff;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --muted: #656d76;
+    --accent: #0969da;
+    --accent-soft: #ddf4ff;
+    --code-bg: #f6f8fa;
+    --code-text: #1f2328;
+    --shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  html[data-theme="dark"] {
+    --bg: #0d1117;
+    --bg-alt: #161b22;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --accent-soft: #1f2d3d;
+    --code-bg: #0d1117;
+    --code-text: #e6edf3;
+    --shadow: 0 1px 3px rgba(0,0,0,.5);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+  }
+
+  /* Topbar */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    backdrop-filter: blur(8px);
+  }
+  .topbar .logo {
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar .logo span { font-size: 1.4rem; }
+  .topbar input {
+    flex: 1;
+    max-width: 400px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: .9rem;
+    outline: none;
+  }
+  .topbar input:focus { border-color: var(--accent); }
+  .topbar button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: .9rem;
+  }
+  .topbar button:hover { background: var(--bg-alt); }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 40px;
+    padding: 32px 24px 80px;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { position: static !important; }
+  }
+
+  /* Sidebar */
+  aside {
+    position: sticky;
+    top: 80px;
+    align-self: start;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+  aside h3 {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  .toc { list-style: none; padding: 0; margin: 0; }
+  .toc li { margin-bottom: 2px; }
+  .toc a {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: .9rem;
+    border-left: 2px solid transparent;
+  }
+  .toc a:hover { background: var(--bg-alt); }
+  .toc a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+    font-weight: 500;
+  }
+
+  /* Content */
+  main { min-width: 0; }
+  .hero {
+    padding: 24px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .hero h1 {
+    font-size: 2rem;
+    margin: 0 0 8px;
+    letter-spacing: -.02em;
+  }
+  .hero p {
+    color: var(--muted);
+    margin: 0;
+    font-size: 1.05rem;
+  }
+  section {
+    margin-bottom: 48px;
+    scroll-margin-top: 80px;
+  }
+  section h2 {
+    font-size: 1.5rem;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  section h3 {
+    font-size: 1.1rem;
+    margin: 24px 0 10px;
+  }
+  p { margin: 0 0 12px; }
+
+  /* Steps */
+  ol.steps { padding-left: 0; counter-reset: step; list-style: none; }
+  ol.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 12px 12px 48px;
+    margin-bottom: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  ol.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    width: 24px;
+    height: 24px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    font-weight: 700;
+  }
+
+  /* Code */
+  code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Consolas, Menlo, monospace;
+    font-size: .85em;
+    color: var(--code-text);
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    overflow-x: auto;
+    font-family: "SF Mono", Consolas, Menlo, monospace;
+    font-size: .85rem;
+    line-height: 1.5;
+    margin: 12px 0;
+  }
+  pre code { background: none; border: none; padding: 0; font-size: inherit; }
+
+  /* Callouts */
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: .95rem;
+  }
+  .callout.warn {
+    border-color: #d29922;
+    background: rgba(210, 153, 34, .12);
+  }
+  .callout.danger {
+    border-color: #cf222e;
+    background: rgba(207, 34, 46, .1);
+  }
+  .callout strong { display: block; margin-bottom: 4px; }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: .9rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  th { background: var(--bg-alt); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  kbd {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: monospace;
+    font-size: .8em;
+  }
+
+  /* Search */
+  .hidden { display: none !important; }
+  .no-results {
+    text-align: center;
+    color: var(--muted);
+    padding: 40px;
+    font-style: italic;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: .85rem;
+    padding: 32px 24px;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span>🔍</span> Guide Ghidra</div>
+  <input id="search" type="search" placeholder="Rechercher dans le guide…">
+  <button id="themeBtn" title="Changer le thème">🌙</button>
+</div>
+
+<div class="layout">
+  <aside>
+    <h3>Sommaire</h3>
+    <ul class="toc" id="toc">
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#install">1. Installation</a></li>
+      <li><a href="#import">2. Importer un binaire</a></li>
+      <li><a href="#analyse">3. Analyse automatique</a></li>
+      <li><a href="#interface">4. Découvrir l'interface</a></li>
+      <li><a href="#decompiler">5. Le décompilateur</a></li>
+      <li><a href="#navigation">6. Navigation & XREFs</a></li>
+      <li><a href="#renommage">7. Renommer & commenter</a></li>
+      <li><a href="#recherche">8. Recherche</a></li>
+      <li><a href="#scripts">9. Scripts</a></li>
+      <li><a href="#patch">10. Patch & export</a></li>
+      <li><a href="#raccourcis">Raccourcis clavier</a></li>
+      <li><a href="#bonnes">Bonnes pratiques</a></li>
+    </ul>
+  </aside>
+
+  <main id="content">
+    <div class="hero">
+      <h1>Guide Ghidra</h1>
+      <p>Apprendre le reverse engineering avec Ghidra, pas à pas.</p>
+    </div>
+
+    <section id="intro">
+      <h2>Introduction</h2>
+      <p>Ghidra est un framework de reverse engineering développé par la NSA, publié en open source en 2019. Il permet d'analyser des binaires compilés (exécutables, bibliothèques) et de reconstruire du pseudo-code à partir d'assembleur.</p>
+      <p>Il est comparable à IDA Pro ou radare2, mais entièrement gratuit.</p>
+      <div class="callout danger">
+        <strong>⚠️ Avertissement légal</strong>
+        N'analyse que des binaires que tu possèdes, que tu as écrits, ou pour lesquels tu as une autorisation explicite (CTF, challenges légaux comme crackmes.one). Le reverse engineering de logiciels tiers peut violer les conditions d'utilisation ou la loi selon les pays.
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>1. Installation</h2>
+      <ol class="steps">
+        <li>Installe un <strong>JDK 17 ou 21</strong> (Ghidra ne fonctionne pas avec Java 8).</li>
+        <li>Télécharge Ghidra depuis <code>ghidra-sre.org</code> ou la page GitHub officielle.</li>
+        <li>Décompresse l'archive dans un dossier (pas besoin d'installeur).</li>
+        <li>Lance le script <code>ghidraRun</code> (Linux/macOS) ou <code>ghidraRun.bat</code> (Windows).</li>
+        <li>Au premier lancement, accepte la licence et choisis ton répertoire de travail.</li>
+      </ol>
+      <div class="callout">
+        <strong>💡 Astuce</strong>
+        Si Ghidra ne démarre pas, vérifie que <code>java -version</code> renvoie bien 17+ dans un terminal. Le chemin du JDK peut être forcé dans <code>support/launch.properties</code>.
+      </div>
+    </section>
+
+    <section id="import">
+      <h2>2. Importer un binaire</h2>
+      <ol class="steps">
+        <li>Crée un projet : <code>File → New Project</code> → <em>Non-Shared Project</em>.</li>
+        <li>Choisis un dossier et un nom de projet.</li>
+        <li><code>File → Import File</code> et sélectionne ton binaire (<code>.exe</code>, <code>.elf</code>, <code>.so</code>, <code>.dll</code>, <code>.bin</code>…).</li>
+        <li>Ghidra détecte le format automatiquement. Vérifie l'architecture et clique <strong>OK</strong>.</li>
+        <li>Double-clique sur le fichier importé pour ouvrir la vue d'analyse.</li>
+      </ol>
+    </section>
+
+    <section id="analyse">
+      <h2>3. Analyse automatique</h2>
+      <p>À l'ouverture, Ghidra propose la fenêtre <em>Analyze</em>. Accepte avec les options par défaut pour un premier passage.</p>
+      <p>L'analyse peut prendre de quelques secondes à plusieurs minutes selon la taille du binaire. Elle effectue notamment :</p>
+      <ul>
+        <li>la détection des fonctions et de leurs bornes,</li>
+        <li>la reconstruction des chaînes de caractères,</li>
+        <li>l'identification des appels de bibliothèques,</li>
+        <li>la propagation des types et des symboles.</li>
+      </ul>
+      <div class="callout warn">
+        <strong>Binaire volumineux ?</strong>
+        Décoche les analyseurs les plus lents (Decompiler Parameter ID, Aggressive Instruction Finder) pour un premier passage rapide.
+      </div>
+    </section>
+
+    <section id="interface">
+      <h2>4. Découvrir l'interface</h2>
+      <p>Une fois l'analyse terminée, tu arrives sur la vue principale. Les fenêtres essentielles :</p>
+      <table>
+        <tr><th>Fenêtre</th><th>Rôle</th></tr>
+        <tr><td><strong>Program Trees</strong></td><td>Sections, segments et mémoire du binaire.</td></tr>
+        <tr><td><strong>Symbol Tree</strong></td><td>Liste des fonctions, imports, exports, labels.</td></tr>
+        <tr><td><strong>Listing</strong></td><td>Désassemblage brut, instruction par instruction.</td></tr>
+        <tr><td><strong>Decompiler</strong></td><td>Pseudo-code C reconstruit, la vue la plus utile.</td></tr>
+        <tr><td><strong>Data Type Manager</strong></td><td>Types définis, structures, énumérations.</td></tr>
+      </table>
+      <p>Tu peux réorganiser ces fenêtres par glisser-déposer et sauvegarder la disposition avec <code>Window → Save Layout</code>.</p>
+    </section>
+
+    <section id="decompiler">
+      <h2>5. Le décompilateur</h2>
+      <p>Ouvre-le via <code>Window → Decompiler</code> si la fenêtre n'est pas visible. Place ton curseur sur une fonction dans le <em>Listing</em> ou le <em>Symbol Tree</em> et le décompilateur affiche son pseudo-code correspondant.</p>
+      <p>Le pseudo-code n'est jamais parfait (types approximatifs, variables nommées <code>uVar1</code>, <code>local_10</code>…), mais il est suffisant pour comprendre la logique.</p>
+      <div class="callout">
+        <strong>💡 Conseil</strong>
+        Le décompilateur s'améliore au fur et à mesure que tu renommes variables et fonctions. Chaque correction se propage dans les fonctions appelantes.
+      </div>
+    </section>
+
+    <section id="navigation">
+      <h2>6. Navigation & XREFs</h2>
+      <p>Les <strong>XREFs</strong> (références croisées) indiquent qui appelle une fonction, qui lit une variable, qui utilise une chaîne. C'est l'outil le plus puissant pour remonter un flux.</p>
+      <ol class="steps">
+        <li>Clique sur une fonction, un symbole ou une adresse.</li>
+        <li>Clic droit → <code>References → Show References to</code> (ou <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd>).</li>
+        <li>La liste des appels apparaît en bas. Double-clique pour naviguer.</li>
+        <li>Utilise le bouton <em>back</em> (flèche ←) pour revenir.</li>
+      </ol>
+      <p>Pour aller directement à une adresse : touche <kbd>G</kbd> puis saisis l'adresse ou le nom du symbole.</p>
+    </section>
+
+    <section id="renommage">
+      <h2>7. Renommer & commenter</h2>
+      <p>Renommer est l'activité principale du reverse engineer. Plus tu documentes, plus le code devient compréhensible.</p>
+      <table>
+        <tr><th>Action</th><th>Raccourci / menu</th></tr>
+        <tr><td>Renommer une fonction/variable</td><td><kbd>L</kbd> ou clic droit → <em>Rename</em></td></tr>
+        <tr><td>Retyper une variable</td><td><kbd>Ctrl</kbd>+<kbd>L</kbd> ou clic droit → <em>Retype Variable</em></td></tr>
+        <tr><td>Ajouter un commentaire</td><td><kbd>;</kbd> (commentaire de ligne)</td></tr>
+        <tr><td>Commentaire de fin de ligne</td><td>Clic droit → <em>Comments → Set EOL Comment</em></td></tr>
+        <tr><td>Définir une structure</td><td><em>Data Type Manager</em> → <em>New → Structure</em></td></tr>
+      </table>
+    </section>
+
+    <section id="recherche">
+      <h2>8. Recherche</h2>
+      <p>Trois recherches principales, accessibles depuis le menu <code>Search</code> :</p>
+      <ul>
+        <li><strong>Program Text</strong> — recherche dans les instructions et symboles (texte libre).</li>
+        <li><strong>For Strings</strong> — liste toutes les chaînes du binaire, filtrables par regex.</li>
+        <li><strong>Memory</strong> — recherche d'octets ou de motifs hexadécimaux.</li>
+      </ul>
+      <div class="callout">
+        <strong>💡 Astuce</strong>
+        Les chaînes comme <code>"Invalid password"</code>, <code>"Access denied"</code> ou des URLs sont souvent un excellent point de départ : remonte leurs XREFs pour tomber sur la logique de vérification.
+      </div>
+    </section>
+
+    <section id="scripts">
+      <h2>9. Scripts</h2>
+      <p>Ghidra est scriptable en Java et en Python (via Jython). Ouvre le gestionnaire avec <code>Window → Script Manager</code>.</p>
+      <p>Quelques scripts fournis par défaut très utiles :</p>
+      <ul>
+        <li><strong>FindCrypt</strong> — détecte les constantes cryptographiques (AES, SHA, RC4…).</li>
+        <li><strong>ExportToC</strong> — exporte le pseudo-code en fichier C.</li>
+        <li><strong>SearchStrings</strong> — recherche avancée de chaînes.</li>
+      </ul>
+      <p>Tu peux écrire tes propres scripts et les exécuter directement depuis l'interface.</p>
+    </section>
+
+    <section id="patch">
+      <h2>10. Patch & export</h2>
+      <p>Ghidra permet de modifier le binaire analysé :</p>
+      <ol class="steps">
+        <li>Clic droit sur une instruction → <code>Patch Instruction</code>.</li>
+        <li>Modifie l'assembleur (ou les octets via <em>Patch Data</em>).</li>
+        <li>Pour sauvegarder : <code>File → Export Program</code>, choisis le format d'origine.</li>
+      </ol>
+      <div class="callout danger">
+        <strong>⚠️ Rappel</strong>
+        Patcher un binaire tiers et le redistribuer peut être illégal. Réserve ça à tes propres programmes, aux CTF, ou à l'apprentissage local.
+      </div>
+    </section>
+
+    <section id="raccourcis">
+      <h2>Raccourcis clavier</h2>
+      <table>
+        <tr><th>Raccourci</th><th>Action</th></tr>
+        <tr><td><kbd>G</kbd></td><td>Aller à une adresse / un symbole</td></tr>
+        <tr><td><kbd>L</kbd></td><td>Renommer</td></tr>
+        <tr><td><kbd>;</kbd></td><td>Commentaire de ligne</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd></td><td>Afficher les XREFs</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td><td>Exporter le programme</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td><td>Rechercher du texte</td></tr>
+        <tr><td><kbd>Alt</kbd>+<kbd>←</kbd></td><td>Retour (navigation)</td></tr>
+        <tr><td><kbd>Alt</kbd>+<kbd>→</kbd></td><td>Avancer (navigation)</td></tr>
+      </table>
+    </section>
+
+    <section id="bonnes">
+      <h2>Bonnes pratiques</h2>
+      <ul>
+        <li><strong>Copie de travail</strong> — analyse toujours une copie du binaire, jamais l'original.</li>
+        <li><strong>Documente</strong> — note tes hypothèses dans un fichier texte à côté du projet.</li>
+        <li><strong>Renomme tôt</strong> — même un nom approximatif (<code>check_password</code>) vaut mieux que <code>FUN_00401234</code>.</li>
+        <li><strong>Snapshots de projet</strong> — utilise les snapshots Ghidra avant une grosse session de patch.</li>
+        <li><strong>Malware</strong> — analyse en VM isolée, sans réseau, avec snapshot de restauration.</li>
+        <li><strong>Reste légal</strong> — CTF, crackmes, tes propres binaires. Pas de cracking commercial.</li>
+      </ul>
+      <div class="callout">
+        <strong>🎯 Pour progresser</strong>
+        Entraîne-toi sur des crackmes.one, des challenges picoCTF ou Root-Me (catégorie <em>Cracking</em>). C'est le meilleur terrain d'apprentissage.
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  Guide Ghidra — à utiliser sur des binaires que tu possèdes ou en contexte légal (CTF, apprentissage).
+</footer>
+
+<script>
+// --- Thème clair/sombre ---
+const themeBtn = document.getElementById('themeBtn');
+const savedTheme = localStorage.getItem('ghidra-theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+themeBtn.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('ghidra-theme', next);
+  themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+});
+
+// --- Recherche ---
+const searchInput = document.getElementById('search');
+const sections = Array.from(document.querySelectorAll('main section'));
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  let visibleCount = 0;
+  sections.forEach(sec => {
+    const text = sec.textContent.toLowerCase();
+    const match = !q || text.includes(q);
+    sec.classList.toggle('hidden', !match);
+    if (match) visibleCount++;
+  });
+
+  // Message "aucun résultat"
+  let noRes = document.getElementById('noRes');
+  if (visibleCount === 0) {
+    if (!noRes) {
+      noRes = document.createElement('div');
+      noRes.id = 'noRes';
+      noRes.className = 'no-results';
+      noRes.textContent = 'Aucun résultat pour « ' + searchInput.value + ' ».';
+      document.getElementById('content').appendChild(noRes);
+    } else {
+      noRes.textContent = 'Aucun résultat pour « ' + searchInput.value + ' ».';
+    }
+  } else if (noRes) {
+    noRes.remove();
+  }
+});
+
+// --- Sommaire actif au scroll ---
+const tocLinks = Array.from(document.querySelectorAll('.toc a'));
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = tocLinks.find(l => l.getAttribute('href') === '#' + entry.target.id);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-80px 0px -70% 0px' });
+
+sections.forEach(sec => observer.observe(sec));
+</script>
+</body>
+</html>
